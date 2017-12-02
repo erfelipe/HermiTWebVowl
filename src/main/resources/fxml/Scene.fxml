@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="480.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="br.com.erfelipe.hermitwebvowl.FXMLController">
+   <center>
+      <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+        <tabs>
+          <Tab text="Log">
+               <content>
+                  <BorderPane prefHeight="200.0" prefWidth="200.0">
+                     <center>
+                        <TextArea fx:id="txtAreaLog" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+          </Tab>
+          <Tab fx:id="tabArea1" text="--">
+               <content>
+                  <BorderPane prefHeight="200.0" prefWidth="200.0">
+                     <center>
+                        <TextArea fx:id="txtArea1" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+          </Tab>
+            <Tab fx:id="TabArea2" text="--">
+               <content>
+                  <BorderPane prefHeight="200.0" prefWidth="200.0">
+                     <center>
+                        <TextArea fx:id="txtArea2" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+            </Tab>
+            <Tab fx:id="TabArea3" text="--">
+               <content>
+                  <BorderPane prefHeight="200.0" prefWidth="200.0">
+                     <center>
+                        <TextArea fx:id="txtArea3" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
+               </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+   </center>
+   <top>
+      <ButtonBar buttonOrder="BUTTON_ORDER_MAC_OS" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <buttons>
+          <Button fx:id="btnAbrir" mnemonicParsing="false" onAction="#evtAbrirArquivo" text="Abrir OWL" />
+            <Button fx:id="btnValidacao" layoutX="275.0" layoutY="17.0" mnemonicParsing="false" onAction="#evtValidacao" text="Validação" />
+            <Button fx:id="btnReasoner" layoutX="315.0" layoutY="17.0" mnemonicParsing="false" onAction="#evtReasoner" text="Reasoner" />
+            <Button fx:id="btnReasoner2" mnemonicParsing="false" onAction="#evtReasoner2" text="Reasoner 2" />
+        </buttons>
+      </ButtonBar>
+   </top>
+   <bottom>
+      <Label fx:id="lblSelectFile" alignment="CENTER" prefHeight="17.0" prefWidth="617.0" text="--" BorderPane.alignment="CENTER" />
+   </bottom>
+</BorderPane>
