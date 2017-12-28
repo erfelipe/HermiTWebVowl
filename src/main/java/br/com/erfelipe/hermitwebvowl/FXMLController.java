@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -234,7 +236,7 @@ public class FXMLController implements Initializable {
     }
 
     @FXML
-    private void evtReasoner2(ActionEvent event) throws OWLOntologyCreationException, IOException, OWLOntologyStorageException {
+    private void evtReasoner2(ActionEvent event) throws OWLOntologyCreationException, IOException, OWLOntologyStorageException, InterruptedException {
         if (arquivo != null) {
             // First, we create an OWLOntologyManager object. The manager will load and 
             // save ontologies. 
@@ -288,13 +290,14 @@ public class FXMLController implements Initializable {
             // The manager creates the for now empty ontology for the inferred axioms for us. 
             OWLOntology inferredAxiomsOntology = manager.createOntology();
             // Now we use the inferred ontology generator to fill the ontology. That might take some 
-            // time since it involves possibly a lot of calls to the reasoner.    
+            // time since it involves possibly a lot of calls to the reasoner.  
+            //OWLDataFactory datafactory = manager.getOWLDataFactory();
             iog.fillOntology(manager, inferredAxiomsOntology);
+
             // Now the axioms are computed and added to the ontology, but we still have to save 
             // the ontology into a file. Since we cannot write to relative files, we have to resolve the 
             // relative path to an absolute one in an OS independent form. We do this by (virtually) creating a 
             // file with a relative path from which we get the absolute file.  
-
             String arquivoSemExtensao = arquivo.getName().replaceFirst("[.][^.]+$", "");
             String diretorioSemArquivo = arquivo.getPath().substring(0, arquivo.getPath().lastIndexOf(File.separator));
 
@@ -307,13 +310,37 @@ public class FXMLController implements Initializable {
             // Now we create a stream since the ontology manager can then write to that stream. 
             OutputStream outputStream = new FileOutputStream(inferredOntologyFile);
             // We use the same format as for the input ontology.
+
             manager.saveOntology(inferredAxiomsOntology, manager.getOntologyFormat(ontology), outputStream);
             // Now that ontology that contains the inferred axioms should be in the ontologies subfolder 
             // (you Java IDE, e.g., Eclipse, might have to refresh its view of files in the file system) 
             // before the file is visible.  
-            setLog("The ontology in " + inferredOntologyFile + " should now contain all inferred axioms (you might need to refresh the IDE file view). ");
+
+            setLog("The ontology in " + inferredOntologyFile + " should now contain all inferred axioms. ");
             setTextArea2(abrirArqOWL(inferredOntologyFile));
             setTabArea2(inferredOntologyFile);
+
+            GeraJson(inferredOntologyFile);
         }
     }
+
+    private void GeraJson(File arq) throws IOException, InterruptedException {
+
+        // Run a java app in a separate system process
+        String arquivo = arq.getPath();
+        Process proc = Runtime.getRuntime().exec("java -jar /Users/eduardofelipe/NetBeansProjects/HermiTWebVowl/owl2vowl.jar -file " + arquivo);
+        // Then retreive the process output
+        proc.waitFor(60, TimeUnit.SECONDS);
+        InputStream in = proc.getInputStream();
+        InputStream err = proc.getErrorStream();
+
+        byte inMessages[] = new byte[in.available()];
+        in.read(inMessages, 0, inMessages.length);
+        setLog(new String(inMessages));
+
+        byte errorMessages[] = new byte[err.available()];
+        err.read(errorMessages, 0, errorMessages.length);
+        setLog(new String(errorMessages));
+    }
+
 }
