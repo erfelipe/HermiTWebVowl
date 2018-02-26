@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -33,18 +35,33 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDisjointClassesAxiom;
+import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLIndividualAxiom;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+import org.semanticweb.owlapi.model.OWLSubObjectPropertyOfAxiom;
 import org.semanticweb.owlapi.reasoner.ConsoleProgressMonitor;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.util.InferredAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredClassAssertionAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredDataPropertyCharacteristicAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredDisjointClassesAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredEquivalentClassAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredEquivalentDataPropertiesAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredEquivalentObjectPropertyAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredIndividualAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredInverseObjectPropertiesAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredObjectPropertyAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredObjectPropertyCharacteristicAxiomGenerator;
 import org.semanticweb.owlapi.util.InferredOntologyGenerator;
 import org.semanticweb.owlapi.util.InferredSubClassAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredSubDataPropertyAxiomGenerator;
+import org.semanticweb.owlapi.util.InferredSubObjectPropertyAxiomGenerator;
 
 public class FXMLController implements Initializable {
 
@@ -74,6 +91,8 @@ public class FXMLController implements Initializable {
     private Tab TabArea3;
     @FXML
     private Button btnReasoner2;
+    @FXML
+    private Button btnReasonerProp;
 
     public FXMLController() {
         arquivo = null;
@@ -341,6 +360,78 @@ public class FXMLController implements Initializable {
         byte errorMessages[] = new byte[err.available()];
         err.read(errorMessages, 0, errorMessages.length);
         setLog(new String(errorMessages));
+    }
+
+    private void InfereObjProp() throws OWLOntologyCreationException, IOException, OWLOntologyStorageException {
+        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+        File inputOntologyFile = arquivo;
+
+        OWLOntology ontology = manager.loadOntologyFromOntologyDocument(inputOntologyFile);
+        ReasonerFactory rf = new ReasonerFactory();
+        Configuration c = new Configuration();
+        c.reasonerProgressMonitor = new ConsoleProgressMonitor();
+        c.ignoreUnsupportedDatatypes = true;
+        OWLReasoner reasoner = rf.createReasoner(ontology, c);
+
+        OWLDataFactory df = manager.getOWLDataFactory();
+
+        boolean consistencyCheck = reasoner.isConsistent();
+        if (consistencyCheck) {
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY,
+                    InferenceType.CLASS_ASSERTIONS, InferenceType.OBJECT_PROPERTY_HIERARCHY,
+                    InferenceType.DATA_PROPERTY_HIERARCHY, InferenceType.OBJECT_PROPERTY_ASSERTIONS);
+
+            List<InferredAxiomGenerator<? extends OWLAxiom>> generators = new ArrayList<>();
+            generators.add(new InferredSubClassAxiomGenerator());
+            generators.add(new InferredClassAssertionAxiomGenerator());
+            generators.add(new InferredDataPropertyCharacteristicAxiomGenerator());
+            generators.add(new InferredEquivalentClassAxiomGenerator());
+            generators.add(new InferredEquivalentDataPropertiesAxiomGenerator());
+            generators.add(new InferredEquivalentObjectPropertyAxiomGenerator());
+            generators.add(new InferredInverseObjectPropertiesAxiomGenerator());
+            generators.add(new InferredObjectPropertyCharacteristicAxiomGenerator());
+
+            // NOTE: InferredPropertyAssertionGenerator significantly slows down
+            // inference computation
+            generators.add(new org.semanticweb.owlapi.util.InferredPropertyAssertionGenerator());
+
+            generators.add(new InferredSubClassAxiomGenerator());
+            generators.add(new InferredSubDataPropertyAxiomGenerator());
+            generators.add(new InferredSubObjectPropertyAxiomGenerator());
+            List<InferredIndividualAxiomGenerator<? extends OWLIndividualAxiom>> individualAxioms
+                    = new ArrayList<>();
+            generators.addAll(individualAxioms);
+
+            generators.add(new InferredDisjointClassesAxiomGenerator());
+            InferredOntologyGenerator iog = new InferredOntologyGenerator(reasoner, generators);
+            OWLOntology inferredAxiomsOntology = manager.createOntology();
+            iog.fillOntology(manager, inferredAxiomsOntology);
+
+            String arquivoSemExtensao = arquivo.getName().replaceFirst("[.][^.]+$", "");
+            String diretorioSemArquivo = arquivo.getPath().substring(0, arquivo.getPath().lastIndexOf(File.separator));
+
+            String arquivoInferred = diretorioSemArquivo + File.separator + arquivoSemExtensao + "-inferredProperty.owl";
+            File inferredOntologyFile = new File(arquivoInferred);
+            if (!inferredOntologyFile.exists()) {
+                inferredOntologyFile.createNewFile();
+            }
+
+            inferredOntologyFile = inferredOntologyFile.getAbsoluteFile();
+
+            try (OutputStream outputStream = new FileOutputStream(inferredOntologyFile)) {
+                // We use the same format as for the input ontology.
+                manager.saveOntology(inferredAxiomsOntology, outputStream);
+            }
+        } // End if consistencyCheck
+        else {
+            System.out.println("Inconsistent input Ontology, Please check the OWL File");
+        }
+
+    }
+
+    @FXML
+    private void evtReasonerProp(ActionEvent event) throws OWLOntologyCreationException, IOException, OWLOntologyStorageException {
+        InfereObjProp();
     }
 
 }

@@ -58,6 +58,7 @@
             <Button fx:id="btnValidacao" layoutX="275.0" layoutY="17.0" mnemonicParsing="false" onAction="#evtValidacao" text="Validação" />
             <Button fx:id="btnReasoner" layoutX="315.0" layoutY="17.0" mnemonicParsing="false" onAction="#evtReasoner" text="Reasoner" />
             <Button fx:id="btnReasoner2" mnemonicParsing="false" onAction="#evtReasoner2" text="Reasoner 2" />
+            <Button fx:id="btnReasonerProp" mnemonicParsing="false" onAction="#evtReasonerProp" text="Reasoner Prop" />
         </buttons>
       </ButtonBar>
    </top>
